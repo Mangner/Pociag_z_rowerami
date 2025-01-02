@@ -16,7 +16,7 @@ int pid_kierowcy_pociagu = 0;
 
 
 int kolejka_komunikatow_zawiadowcy;
-struct message Pociag_Przyjechal, Zawiadowca_Zapisal_PID, Odjechal;
+struct message Pociag_Przyjechal, Zawiadowca_Zapisal_PID, Odjechal, Semafory_Ustawione;;
 int odliczacz_czasu;
 
 void odjazd_pociagu()
@@ -31,7 +31,7 @@ void odjazd_pociagu()
 		}
 		else 
 		{
-			printf("Odjazd!\n");
+			printf("Zawiadowca Stacji: Odjazd!\n");
 			send_message(kolejka_komunikatow_zawiadowcy, &Odjechal, 0);
 		}
 }	
@@ -54,6 +54,7 @@ int main()
 	Pociag_Przyjechal.type = 1;
 	Zawiadowca_Zapisal_PID.type = 2;
 	Odjechal.type = 3;
+	Semafory_Ustawione.type = 4;
 
 	int peron = create_shared_memory(".", 'D', sizeof(int) * 2, IPC_CREAT | 0600 );
 	int* peron_memory_adress = (int*)attach_shared_memory(peron, NULL, 0);
@@ -63,6 +64,7 @@ int main()
 
 	signal(SIGINT, handler_przedwczesny_odjazd);
 
+	printf("Zawiadowca Stacji rozpoczal prace.\n");
 
 	while (nie_rozwiezieni)
 	{

@@ -47,6 +47,22 @@ void wait_semafor(int sem_id, int number, int flags)
 }
 
 
+int wait_semafor_no_wait(int sem_id, int number)
+{
+	struct sembuf semafor_operations;
+    semafor_operations.sem_num = number;
+    semafor_operations.sem_op = -1;
+    semafor_operations.sem_flg = IPC_NOWAIT;
+
+	int operation = semop(sem_id, &semafor_operations, 1);
+
+	if (operation == -1)
+		return 0;
+	else
+		return 1;
+}
+
+
 void signal_semafor(int sem_id, int number, int flags)
 {
     struct sembuf semafor_operations;
