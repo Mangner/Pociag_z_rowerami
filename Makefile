@@ -20,5 +20,4 @@ Pasazer_z_rowerem:
 
 clean:
 	rm -r Pociagi Kierownik_Pociagu Zawiadowca_Stacji Pasazerowie Pasazer Pasazer_z_rowerem
-	ps -u $(whoami) | grep "Kierown*" | awk '{print $1}' | xargs kill -9
-	ipcrm -a
+	

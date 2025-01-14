@@ -40,7 +40,7 @@ int main()
 
 
 	int iterator = 0;
-	while (generate_passengers || iterator >= MaxGeneratedPassengersAmount)
+	while (generate_passengers || iterator <= MaxGeneratedPassengersAmount)
 	{
 		switch (fork())
 		{

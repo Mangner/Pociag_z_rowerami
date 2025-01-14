@@ -29,7 +29,7 @@ void odjazdPociagu()
 
 void signalJedenZawiadowcy_handler(int signal)
 {
-	printf("[%d] Zawiadowca Stacji: Sygnał 1 - szybszy odjzad.\n");
+	printf("[%d] Zawiadowca Stacji: Sygnał 1 - szybszy odjzad.\n", getpid());
 	odjazdPociagu();
 }
 
@@ -50,6 +50,7 @@ int main()
 
 	printf("[%d] Zawiadowca Stacji rozpoczal prace.\n", getpid());
 
+	signal(SIGUSR1, signalJedenZawiadowcy_handler);
 
 	while (PracaTrwa)
 	{
@@ -78,4 +79,6 @@ int main()
 		printf("[%d] Zawiadowca Stacji: Dobra odjechał następny.\n", getpid());
 
 	}
+
+	delete_meesage_queue(kolejowa_kolejka_komunikatow);
 }
