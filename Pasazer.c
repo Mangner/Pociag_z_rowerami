@@ -8,3 +8,10 @@
 #include "My_Library/enviromental_variables.h"
 
 
+
+
+int main()
+{
+
+	return 0;
+}

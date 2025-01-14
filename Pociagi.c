@@ -8,8 +8,7 @@
 #include "My_Library/enviromental_variables.h"
 
 
-struct message PociagiGotowe;
-PociagiGotowe.type = 1;				// Proces Pociagi skonczyl dzialanie
+struct message PociagiGotowe = { .type = 1 };				// Proces Pociagi skonczyl dzialanie
 
 int main()
 {
@@ -24,7 +23,7 @@ int main()
 				exit(1);
 			
 			case 0:
-				execl("./Kierownic_Pociagu", "Kierownik_Pociagu", NULL);
+				execl("./Kierownik_Pociagu", "Kierownik_Pociagu", NULL);
 				perror("Execl failed");
 				exit(2);
 		}

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
+#include <sys/wait.h>
 #include "My_Library/message_queue_operations.h"
 #include "My_Library/shared_memory_operations.h"
 #include "My_Library/semafor_operations.h"
@@ -30,7 +32,7 @@ int losuj_zero_jeden()
 int main()
 {
 	srand(time(NULL));
-	if (signal(SIGURS1, end_generation_handler) == -1 )
+	if (signal(SIGUSR1, end_generation_handler) == SIG_ERR )
 	{
         perror("Nie można ustawić handlera dla SIGUSR1");
         exit(1);
@@ -47,7 +49,7 @@ int main()
 				exit(2);
 			
 			case 0:
-				switch (losuj_zero_jeden)
+				switch (losuj_zero_jeden())
 				{
 					case 1:
 						execl("./Pasazer", "Pasazer", NULL);
@@ -64,7 +66,7 @@ int main()
 		iterator++;
 	}
 
-	for (iterator > 0)
+	while (iterator > 0)
 	{
 		wait(NULL);
 		iterator--;
