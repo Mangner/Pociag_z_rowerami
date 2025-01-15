@@ -8,11 +8,11 @@
 #include "My_Library/enviromental_variables.h"
 
 
-struct message PociagiGotowe = { .type = 1 };				// Proces Pociagi skonczyl dzialanie
+struct message PociagiGotowe = { .mtype = 1 };				// Proces Pociagi skonczyl dzialanie
 
 int main()
 {
-	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'A', IPC_CREAT | 0600);
+	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 
 	for (int i = 0; i < N; i++)
 	{

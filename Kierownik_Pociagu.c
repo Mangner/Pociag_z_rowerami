@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -6,19 +7,18 @@
 #include "My_Library/shared_memory_operations.h"
 #include "My_Library/semafor_operations.h"
 #include "My_Library/enviromental_variables.h"
-#include <string.h>
 
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej kierownik pociagu pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
 int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas której pociąg stoi na peronie
 int PasazerowieMogaWchodzic = 0;	// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
 
-struct message WjazdPociagu = { .type = 2 };						// Kierownik czeka na sygnal Zawiadowcy ze moze wjechac
-struct message PociagWjechal = { .type = 3, .content = {0} };		// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron
-struct message PociagOdjechal = { .type = 4 };						// Komunikat dla Zawiadowcy Stacji że pociąg opuścił peron
-struct message RodzajPasazera = { .type = 5 };						// Komunikat dla Kierownika od Pasażera który mówi czy pasażer ma rower czy nie
-struct message LosPasazera = { .type = 6 };							// Komunikat dla pasażera który mówi czy wchodzi czy wraca do kolejki na peronie 
-struct message KoniecPasazera = { .type = 7 };						// Komunikat dla Kierowcy Pociągu że ten proces pasażerski się wpisał albo wrócił do kolejki 
+struct message WjazdPociagu = { .mtype = 2 };						// Kierownik czeka na sygnal Zawiadowcy ze moze wjechac
+struct message PociagWjechal = { .mtype = 3 };						// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron
+struct message PociagOdjechal = { .mtype = 4 };						// Komunikat dla Zawiadowcy Stacji że pociąg opuścił peron
+struct message RodzajPasazera = { .mtype = 5 };						// Komunikat dla Kierownika od Pasażera który mówi czy pasażer ma rower czy nie
+struct message LosPasazera = { .mtype = 6 };							// Komunikat dla pasażera który mówi czy wchodzi czy wraca do kolejki na peronie 
+struct message KoniecPasazera = { .mtype = 7 };						// Komunikat dla Kierowcy Pociągu że ten proces pasażerski się wpisał albo wrócił do kolejki 
 
 void odjazdPociagu_handler(int signal)
 {
@@ -30,7 +30,7 @@ int main()
 {
 	printf("[%d] Kierownik Pociagu: Pociag gotowy do pracy.\n", getpid());
 	
-	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'A', IPC_CREAT | 0600);
+	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(PociagWjechal.content, sizeof(PociagWjechal.content), "%d", getpid());			// Treśc tego komunikatu to pid tego procesu żeby Zawiadowca mógł mu wysyłać sygnały
 
 	int semafory_pociagu = create_semafor(".", 'C', 4, IPC_CREAT | 0600);					// Semafory pociagu

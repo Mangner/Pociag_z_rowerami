@@ -1,6 +1,5 @@
 #include "message_queue_operations.h"
 
-
 int create_message_queue(const char *path, int identifier, int flags)
 {
 	key_t key = ftok(path, identifier);
@@ -20,7 +19,6 @@ int create_message_queue(const char *path, int identifier, int flags)
 	return mesg_queue_ID;
 }
 
-
 void send_message(int mesg_queue_ID, struct message *msg_ptr, int msg_flag)
 {
 	if (msgsnd(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content), msg_flag) == -1 ) 
@@ -30,18 +28,14 @@ void send_message(int mesg_queue_ID, struct message *msg_ptr, int msg_flag)
 	}
 }
 
-
 void recive_message(int mesg_queue_ID, struct message *msg_ptr,int message_type, int msg_flag)
 {
-		printf("[%d] wszedł.\n", getpid());
 		if (msgrcv(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content), message_type, msg_flag) == -1 )
 		{
 			perror("Msgrcv failed");
 			exit(8);
 		}
-		printf("[%d] Wyszedl.\n", getpid());
 }
-
 
 void delete_meesage_queue(int mesg_queue_ID)
 {
@@ -50,4 +44,25 @@ void delete_meesage_queue(int mesg_queue_ID)
 		perror("Msgctl IPC_RMID failed");
 		exit(9);
 	}
+}
+
+void clear_existing_message_queue(const char *path, int identifier) 
+{
+    key_t key = ftok(path, identifier);
+    if (key == -1) 
+    {
+        perror("Błąd ftok w clear_existing_message_queue");
+        return;
+    }
+
+    int msqid = msgget(key, 0666);
+    if (msqid != -1) 
+    {
+        printf("Usuwanie istniejącej kolejki komunikatów o ID: %d\n", msqid);
+        if (msgctl(msqid, IPC_RMID, NULL) == -1) 
+        {
+            perror("Błąd podczas usuwania kolejki komunikatów");
+            exit(1); // Wyjście, jeśli kolejka nie może być usunięta
+        }
+    }
 }

@@ -9,13 +9,13 @@
 
 
 
-struct message RodzajPasazera = { .type = 5 };					// Komunikat dla Kierownika od Pasażera który mówi czy pasażer ma rower czy nie
-struct message LosPasazera = { .type = 6 };						// Komunikat dla pasażera który mówi czy wchodzi do pociągu czy wraca do kolejki na peronie 
-struct message KoniecPasazera = { .type = 7 };						// Komunikat dla Kierowcy Pociągu że ten proces pasażerski się wpisał albo wrócił do kolejki 
+struct message RodzajPasazera = { .mtype = 5 };					// Komunikat dla Kierownika od Pasażera który mówi czy pasażer ma rower czy nie
+struct message LosPasazera = { .mtype = 6 };						// Komunikat dla pasażera który mówi czy wchodzi do pociągu czy wraca do kolejki na peronie 
+struct message KoniecPasazera = { .mtype = 7 };						// Komunikat dla Kierowcy Pociągu że ten proces pasażerski się wpisał albo wrócił do kolejki 
 
 int main()
 {
-	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'A', IPC_CREAT | 0600);
+	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(RodzajPasazera.content, sizeof(RodzajPasazera.content), "%s", "Bez Rowera");		// Zapisuje że pasażer nie ma roweru
 
 	size_t rozmiar_pamieci_pociagu = P + R + 2;
