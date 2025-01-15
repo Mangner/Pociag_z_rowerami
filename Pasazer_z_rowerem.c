@@ -17,8 +17,7 @@ struct message KoniecPasazera = { .mtype = 7 };						// Komunikat dla Kierowcy P
 
 int main()
 {
-	/*
-	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
+	/*int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(RodzajPasazera.content, sizeof(RodzajPasazera.content), "%s", "Z rowerem");		// Zapisuje że pasażer nie ma roweru
 
 	size_t rozmiar_pamieci_pociagu = P + R + 2;
