@@ -5,5 +5,5 @@
 #define P 20 		// Liczba Miejsc Pasażerskich w Pociągu
 #define R 5			// Liczba Miejsc dla Rowerów w Pociągu
 
-#define T 10		// Czas w sekundach co którą odjężdża pociąg
+#define T 4		// Czas w sekundach co którą odjężdża pociąg
 #define T1 30 		// Czas w sekundach po którym pociągi wracają na dworzec

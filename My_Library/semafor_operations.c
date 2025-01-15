@@ -81,6 +81,11 @@ void signal_semafor(int sem_id, int number, int flags)
 
 void free_semafor(int sem_id)
 {
+	if (semctl(sem_id, 0, GETVAL) == -1 ) 
+	{  
+		return; 
+	}
+
     if (semctl(sem_id, 69, IPC_RMID) == -1 )
     {
         perror("Semtcl IPC_RMID error");

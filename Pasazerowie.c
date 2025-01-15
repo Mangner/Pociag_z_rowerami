@@ -11,7 +11,7 @@
 
 
 int generate_passengers = 1;
-
+struct message DoPasazerow = { .mtype = 8 };						// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
 
 void end_generation_handler(int signal)
 {
@@ -38,6 +38,17 @@ int main()
         exit(1);
     }
 
+	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
+
+	int pidyKierownikowZawiadowcy[N + 1];
+	for (int i = 0; i < N + 1; i++)
+	{
+		recive_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 8, 0);
+		pid_t pid = (pid_t)strtol(DoPasazerow.content, NULL, 10);
+		pidyKierownikowZawiadowcy[i] = pid;
+		printf("[%d] Pasazerowie: Odebralem Pid procesu: %d.\n", getpid(), pid);
+	}
+
 
 	int iterator = 0;
 	while (generate_passengers && iterator < MaxGeneratedPassengersAmount)
@@ -62,15 +73,24 @@ int main()
 						exit(4);
 				}
 		}
-		sleep(PassengersGenerationLatency);
 		iterator++;
+		usleep(PassengersGenerationLatency);
 	}
 
-	while (iterator > 0)
+	while (iterator != 0)
 	{
 		wait(NULL);
 		iterator--;
 	}
 
+
+	printf("Wszyscy Pasażerowie już wsiedli.\n");
+
+	for (int i = 0; i < N + 1; i++)
+	{
+		kill(pidyKierownikowZawiadowcy[i], SIGIO);
+		printf("[%d] Pasazerowie: Wysłałem sygnal do procesu: %d.\n", getpid(), pidyKierownikowZawiadowcy[i]);
+	}
+	
 	return 0;
 }

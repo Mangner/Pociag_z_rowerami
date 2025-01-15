@@ -48,6 +48,12 @@ void detach_shared_memory(const void* shm_adress, int shm_id)
 
 void free_shared_memory(int shm_id)
 {
+	struct shmid_ds buf;
+	if (shmctl(shm_id, IPC_STAT, &buf) == -1 ) 
+	{ 
+		return; 
+	}
+
 	if (shmctl(shm_id, IPC_RMID, NULL) == -1 )
 	{
 		perror("Shmctl IPC_RMID error");

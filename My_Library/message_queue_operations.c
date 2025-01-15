@@ -31,14 +31,13 @@ void send_message(int mesg_queue_ID, struct message *msg_ptr, int msg_flag)
 }
 
 
-void recive_message(int mesg_queue_ID, struct message *msg_ptr,int message_type, int msg_flag)
+int recive_message(int mesg_queue_ID, struct message *msg_ptr,int message_type, int msg_flag)
 {
 	if (msgrcv(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content), message_type, msg_flag) == -1 )
 	{
-		printf("[%d] ", getpid());
-		perror("Msgrcv failed");
-		exit(8);
+		return 1;
 	}
+	return 0;
 }
 
 

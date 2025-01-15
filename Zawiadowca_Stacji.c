@@ -16,6 +16,7 @@ struct message PociagiGotowe = { .mtype = 1 }; 				// Proces Pociagi skonczyl dz
 struct message WjazdPociagu = { .mtype = 2 };				// Zawiadowca wysyla sygnal pociagowi ze moze wjechac
 struct message PociagWjechal = { .mtype = 3 };				// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron
 struct message PociagOdjechal = { .mtype = 4 };				// Komunikat dla Zawiadowcy Stacji że pociąg opuścił peron
+struct message DoPasazerow = { .mtype = 8 };				// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
 
 
 void odjazdPociagu()
@@ -40,10 +41,17 @@ void signalDwaZawiadowcy_handler(int signal)
     	perror("Nie udało się wysłać sygnału");
 }
 
+void koniecPracy_handler(int signal)
+{
+	PracaTrwa = 0; 
+}
 
 int main()
 {
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
+	snprintf(WjazdPociagu.content, sizeof(WjazdPociagu.content), "%d", getpid());
+	snprintf(DoPasazerow.content, sizeof(DoPasazerow.content), "%d", getpid());	
+	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 	recive_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 1, 0);
 
  
@@ -51,12 +59,15 @@ int main()
 
 	signal(SIGUSR1, signalJedenZawiadowcy_handler);
 	signal(SIGUSR2, signalDwaZawiadowcy_handler);
+	signal(SIGIO, koniecPracy_handler);
 
 	while (PracaTrwa)
 	{
 		printf("[%d] Zawiadowca Stacji: Pociag moze wjechac!\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 0);
-		recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0);
+		if (recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0))
+			break;
+
 		PociagNieOdjechal = 1;
 		
 		while (PociagNieOdjechal)
@@ -65,7 +76,6 @@ int main()
 			{
 				if (!PociagNieOdjechal)
 				{
-					printf("Przerwal petle.\n");
 					break;
 				}
 				sleep(1);
@@ -76,9 +86,10 @@ int main()
 		}
 
 		recive_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 4, 0);
-		printf("[%d] Zawiadowca Stacji: Dobra odjechał następny.\n", getpid());
-
+		printf("[%d] Zawiadowca Stacji: Dobra odjechał, następny.\n", getpid());
 	}
+
+	printf("[%d] Zawiadowca Stacji: Kończę pracę na dziś.\n", getpid());
 
 	delete_meesage_queue(kolejowa_kolejka_komunikatow);
 }

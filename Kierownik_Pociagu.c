@@ -21,13 +21,22 @@ struct message PociagOdjechal = { .mtype = 4 };						// Komunikat dla Zawiadowcy
 struct message RodzajPasazera = { .mtype = 5 };						// Komunikat dla Kierownika od Pasażera który mówi czy pasażer ma rower czy nie
 struct message LosPasazera = { .mtype = 6 };						// Komunikat dla pasażera który mówi czy wchodzi czy wraca do kolejki na peronie 
 struct message KoniecPasazera = { .mtype = 7 };						// Komunikat dla Kierowcy Pociągu że ten proces pasażerski się wpisał albo wrócił do kolejki 
+struct message DoPasazerow = { .mtype = 8 };						// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
 
 
 void odjazdPociagu_handler(int signal)
 {
+	if (PociagNieOdjechal)
+	{
 	printf("[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGURS1.\n", getpid());
 	PociagNieOdjechal = 0;
+	}
 }	
+
+void koniecPracy_handler(int signal)
+{
+	PracaTrwa = 0;
+}
 
 int main()
 {
@@ -35,6 +44,9 @@ int main()
 	
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(PociagWjechal.content, sizeof(PociagWjechal.content), "%d", getpid());			// Treśc tego komunikatu to pid tego procesu żeby Zawiadowca mógł mu wysyłać sygnały
+	snprintf(DoPasazerow.content, sizeof(DoPasazerow.content), "%d", getpid());				// Potem pasazerowie jak sie skoncza wysla sygnlal by skonczyli prace 
+
+	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 
 	int semafory_pociagu = create_semafor(".", 'C', 3, IPC_CREAT | 0600);					// Semafory pociagu
 	initialize_semafor(semafory_pociagu, 0, 1);												// Semafor ktory podnosi się gdy pasażerowie mogą wchodzić
@@ -49,10 +61,15 @@ int main()
 	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
 
 	signal(SIGUSR1, odjazdPociagu_handler);
+	signal(SIGIO, koniecPracy_handler);
 
 	while (PracaTrwa)
 	{
-		recive_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 2, 0);
+		if (recive_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 2, 0))
+		{
+			break;
+		}
+
 		printf("[%d] Kierownik Pociagu: Pociag wjechal na peron!\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 0);
 
@@ -69,7 +86,7 @@ int main()
 			{
 				signal_semafor(semafory_pociagu, 2, 0);
 				recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0);
-				
+
 				if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
 				{
 					continue;
@@ -80,26 +97,39 @@ int main()
 					{
 						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
 						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
+						pid_t pid = (pid_t)strtol(WjazdPociagu.content, NULL, 10);
+						if (kill(pid, SIGUSR1) == -1) 
+    						perror("Nie udało się wysłać sygnału");
+
+						while (PociagNieOdjechal)
+							pause();
 					}
 					else
 					{
 						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
 						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
-					}
-					recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
-					printf("[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\n", getpid());
-
-					if (PasazerowieMogaWchodzic)
-						signal_semafor(semafory_pociagu, 0, 0);
-
+					}					
 				}
+				recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
+				printf("[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\n", getpid());
+
+				if (PasazerowieMogaWchodzic)
+					signal_semafor(semafory_pociagu, 0, 0);
 			}
 		}
 
 		printf("[%d] Kierownik Pociągu: Odjazd!\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 0);
 
+
+		for (int i = 0; i < T1; i++)
+			sleep(1);
+
+		
+		printf("[%d] Kierownik Pociagu: Pociag rozwiozl pasazerow.\n", getpid());	
 	}
+
+	printf("[%d] Kierownik Pociagu: Koncze prace.\n", getpid());
 
 	free_semafor(semafory_pociagu);
 	detach_shared_memory(pamiec_dzielona_pociagu, shm_ID);
