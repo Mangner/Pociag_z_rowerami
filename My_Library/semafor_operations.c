@@ -16,8 +16,6 @@ int create_semafor(const char *path, int identifier, int semafor_amount, int fla
         perror("Semget failed");
         exit(2);
     }
-    printf("The set of semafors has been created.\n");
-
     return sem_id;
 }
 
@@ -46,6 +44,22 @@ void wait_semafor(int sem_id, int number, int flags)
         free_semafor(sem_id);
         exit(4);
     }
+}
+
+
+int wait_semafor_no_wait(int sem_id, int number)
+{
+	struct sembuf semafor_operations;
+    semafor_operations.sem_num = number;
+    semafor_operations.sem_op = -1;
+    semafor_operations.sem_flg = IPC_NOWAIT;
+
+	int operation = semop(sem_id, &semafor_operations, 1);
+
+	if (operation == -1)
+		return 0;
+	else
+		return 1;
 }
 
 

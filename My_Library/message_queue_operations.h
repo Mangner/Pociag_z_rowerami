@@ -8,8 +8,8 @@
 
 struct message
 {
-	long type;
-	char content[100];
+	long mtype;
+	char content[20];
 };
 
 
