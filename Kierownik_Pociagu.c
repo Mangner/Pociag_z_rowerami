@@ -11,7 +11,7 @@
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej kierownik pociagu pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
 int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas której pociąg stoi na peronie
-int PasazerowieMogaWchodzic = 0;	// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
+int PasazerowieMogaWchodzic = 1;	// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
 
 
 
@@ -36,7 +36,7 @@ int main()
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(PociagWjechal.content, sizeof(PociagWjechal.content), "%d", getpid());			// Treśc tego komunikatu to pid tego procesu żeby Zawiadowca mógł mu wysyłać sygnały
 
-	int semafory_pociagu = create_semafor(".", 'C', 4, IPC_CREAT | 0600);					// Semafory pociagu
+	int semafory_pociagu = create_semafor(".", 'C', 3, IPC_CREAT | 0600);					// Semafory pociagu
 	initialize_semafor(semafory_pociagu, 0, 1);												// Semafor ktory podnosi się gdy pasażerowie mogą wchodzić
 	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
 	initialize_semafor(semafory_pociagu, 2, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
@@ -65,7 +65,35 @@ int main()
 
 		while (PociagNieOdjechal)
 		{
-			
+			if (wait_semafor_no_wait(semafory_pociagu, 1))
+			{
+				signal_semafor(semafory_pociagu, 2, 0);
+				recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0);
+				
+				if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
+				{
+					continue;
+				}
+				else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
+				{
+					if (pamiec_dzielona_pociagu[IndexWolnegoMiejsca] >= P)
+					{
+						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
+						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
+					}
+					else
+					{
+						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
+						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
+					}
+					recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
+					printf("[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\n", getpid());
+
+					if (PasazerowieMogaWchodzic)
+						signal_semafor(semafory_pociagu, 0, 0);
+
+				}
+			}
 		}
 
 		printf("[%d] Kierownik Pociągu: Odjazd!\n", getpid());

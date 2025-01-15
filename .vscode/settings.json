@@ -1,5 +1,7 @@
 {
 	"files.associations": {
-		"message_queue_operations.h": "c"
+		"message_queue_operations.h": "c",
+		"semafor_operations.h": "c",
+		"shared_memory_operations.h": "c"
 	}
 }
