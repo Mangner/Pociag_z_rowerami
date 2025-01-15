@@ -6,6 +6,7 @@
 #include "My_Library/shared_memory_operations.h"
 #include "My_Library/semafor_operations.h"
 #include "My_Library/enviromental_variables.h"
+#include <string.h>
 
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej kierownik pociagu pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
@@ -44,20 +45,11 @@ int main()
 	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
 	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
 
-	
-	int recive_message_controler;				// Zmienna do której przypisywany jest wynik recive_messsage jeśli jest 0 to znaczy że recive został przerwany przez sygnał
-
 	signal(SIGUSR1, odjazdPociagu_handler);
 
 	while (PracaTrwa)
 	{
-		printf("Przed dziala.\n");
-		recive_message_controler = (kolejowa_kolejka_komunikatow, &WjazdPociagu, 2, 0);
-		while(!recive_message_controler)
-			recive_message_controler = (kolejowa_kolejka_komunikatow, &WjazdPociagu, 2, 0);
-		printf("Po już nie.\n");
-
-
+		recive_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 2, 0);
 		printf("[%d] Kierownik Pociagu: Pociag wjechal na peron!\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 0);
 
@@ -67,21 +59,20 @@ int main()
 		pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] = 0;
 
 
+
 		while (PociagNieOdjechal)
 		{
 			if (wait_semafor_no_wait(semafory_pociagu, 1))
 			{
 				signal_semafor(semafory_pociagu, 2, 0);
-				recive_message_controler = (kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0);
-				while (!recive_message_controler)
-					recive_message_controler = (kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0);
-
-				if (RodzajPasazera.content == "Z rowerem")
+				recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0);
+				
+				if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
 				{
 					continue;
 				}
 
-				else if (RodzajPasazera.content == "Bez Rowera")
+				else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
 				{
 					if (pamiec_dzielona_pociagu[IndexWolnegoMiejsca] >= P)
 					{
@@ -93,12 +84,9 @@ int main()
 						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
 						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
 					}
-
-					recive_message_controler = recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
-					while(!recive_message_controler)
-						recive_message_controler = recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
+					recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
+					
 				}
-
 			}
 		}
 

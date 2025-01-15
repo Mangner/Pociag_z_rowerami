@@ -6,6 +6,7 @@
 #include "My_Library/shared_memory_operations.h"
 #include "My_Library/semafor_operations.h"
 #include "My_Library/enviromental_variables.h"
+#include <string.h>
 
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej zawiadowca pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
@@ -13,7 +14,7 @@ int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas ktorej zawiadowca czek
 
 struct message PociagiGotowe = { .type = 1 }; 				// Proces Pociagi skonczyl dzialanie
 struct message WjazdPociagu = { .type = 2 };				// Zawiadowca wysyla sygnal pociagowi ze moze wjechac
-struct message PociagWjechal = { .type = 3 };				// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron 
+struct message PociagWjechal = { .type = 3 , .content = {0}};				// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron 
 struct message PociagOdjechal = { .type = 4 };				// Komunikat dla Zawiadowcy Stacji że pociąg opuścił peron
 
 
@@ -56,7 +57,9 @@ int main()
 	{
 		printf("[%d] Zawiadowca Stacji: Pociag moze wjechac!\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 0);
+		printf("Tu chyba dochodzi.\n");
 		recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0);
+		printf("Tu juz nie.\n");
 		PociagNieOdjechal = 1;
 		
 		while (PociagNieOdjechal)
