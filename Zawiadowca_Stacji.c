@@ -29,13 +29,13 @@ void odjazdPociagu()
 
 void signalJedenZawiadowcy_handler(int signal)
 {
-	printf("[%d] Zawiadowca Stacji: Sygnał 1 - szybszy odjzad.\n", getpid());
+	printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 1 - szybszy odjazd.\033[0m\n", getpid());
 	odjazdPociagu();
 }
 
 void signalDwaZawiadowcy_handler(int signal)
 {
-	printf("[%d] Zawiadowca Stacji: Sygnał 2 - nikt nie może już wejść.\n");
+	printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 2 - nikt nie może już wejść.\033[0m\n", getpid());
 	pid_t pid = (pid_t)strtol(PociagWjechal.content, NULL, 10);
 	if (kill(pid, SIGUSR2) == -1) 
     	perror("Nie udało się wysłać sygnału");
@@ -55,7 +55,7 @@ int main()
 	recive_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 1, 0);
 
  
-	printf("[%d] Zawiadowca Stacji rozpoczal prace.\n", getpid());
+	printf("\033[1;31m[%d] Zawiadowca Stacji rozpoczal prace.\033[0m\n", getpid());
 
 	signal(SIGUSR1, signalJedenZawiadowcy_handler);
 	signal(SIGUSR2, signalDwaZawiadowcy_handler);
@@ -63,7 +63,7 @@ int main()
 
 	while (PracaTrwa)
 	{
-		printf("[%d] Zawiadowca Stacji: Pociag moze wjechac!\n", getpid());
+		printf("\033[1;31m[%d] Zawiadowca Stacji: Pociag moze wjechac!\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 0);
 		if (recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0))
 			break;
@@ -86,10 +86,10 @@ int main()
 		}
 
 		recive_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 4, 0);
-		printf("[%d] Zawiadowca Stacji: Dobra odjechał, następny.\n", getpid());
+		printf("\033[1;31m[%d] Zawiadowca Stacji: Dobra odjechał, następny.\033[0m\n", getpid());
 	}
 
-	printf("[%d] Zawiadowca Stacji: Kończę pracę na dziś.\n", getpid());
+	printf("\033[1;31m[%d] Zawiadowca Stacji: Kończę pracę na dziś.\033[0m\n", getpid());
 
 	delete_meesage_queue(kolejowa_kolejka_komunikatow);
 }

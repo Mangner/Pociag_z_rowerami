@@ -17,7 +17,6 @@ struct message KoniecPasazera = { .mtype = 7 };						// Komunikat dla Kierowcy P
 
 int main()
 {
-	/*
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(RodzajPasazera.content, sizeof(RodzajPasazera.content), "%s", "Z rowerem");		// Zapisuje że pasażer nie ma roweru
 
@@ -44,15 +43,15 @@ int main()
 		pamiec_dzielona_pociagu[miejsce_mojego_rowera] = getpid();
 		pamiec_dzielona_pociagu[IndexWolnegoMiejsca] = pamiec_dzielona_pociagu[IndexWolnegoMiejsca] + 1;
 		pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] = pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] + 1;
-		printf("[%d] Pasazer z Rowerem: Usiadłem i mój rower też.\n", getpid()); 
+		printf("\033[1;32m[%d] Pasazer z Rowerem: Usiadłem i mój rower też.\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 0);
 	}
 	else
 	{
-		printf("[%d] Pasazer z Rowerem: Nie ma miejsca dla mnie i mojego rowerku :( ,wracam do kolejki.\n", getpid());
+		printf("\033[1;32m[%d] Pasazer z Rowerem: Nie ma miejsca dla mnie i mojego rowerku :( , wracam do kolejki.\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 0);
 		execl("./Pasazer_z_rowerem", "Pasazer_z_rowerem", NULL);
 	}
-	*/
+
 	return 0;
 }

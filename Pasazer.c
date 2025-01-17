@@ -38,12 +38,12 @@ int main()
 		int moje_miejsce = pamiec_dzielona_pociagu[IndexWolnegoMiejsca];
 		pamiec_dzielona_pociagu[moje_miejsce] = getpid();
 		pamiec_dzielona_pociagu[IndexWolnegoMiejsca] = pamiec_dzielona_pociagu[IndexWolnegoMiejsca] + 1;
-		printf("[%d] Pasazer: Usiadlem.\n", getpid()); 
+		printf("\033[1;33m[%d] Pasazer: Usiadlem.\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 0);
 	}
 	else
 	{
-		printf("[%d] Pasazer: Nie ma dla mnie miejsca :( wracam do kolejki.\n", getpid());
+		printf("\033[1;33m[%d] Pasazer: Nie ma dla mnie miejsca :( wracam do kolejki.\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 0);
 		execl("./Pasazer", "Pasazer", NULL);
 	}

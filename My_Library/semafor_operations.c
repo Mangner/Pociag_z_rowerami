@@ -91,5 +91,4 @@ void free_semafor(int sem_id)
         perror("Semtcl IPC_RMID error");
         exit(6);
     }
-    printf("The set of semafors has been deleted.\n");
 }

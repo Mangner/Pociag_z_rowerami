@@ -24,7 +24,7 @@ int losuj_zero_jeden()
 
     if (los < 70) 
         return 1;
-    else 
+    else if (los >= 70)
         return 0;
 }
 
@@ -46,13 +46,14 @@ int main()
 		recive_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 8, 0);
 		pid_t pid = (pid_t)strtol(DoPasazerow.content, NULL, 10);
 		pidyKierownikowZawiadowcy[i] = pid;
-		printf("[%d] Pasazerowie: Odebralem Pid procesu: %d.\n", getpid(), pid);
 	}
 
 
 	int iterator = 0;
+	int los;
 	while (generate_passengers && iterator < MaxGeneratedPassengersAmount)
 	{
+		los = losuj_zero_jeden();
 		switch (fork())
 		{
 			case -1:
@@ -60,7 +61,8 @@ int main()
 				exit(2);
 			
 			case 0:
-				switch (losuj_zero_jeden())
+				sleep(1);
+				switch (los)
 				{
 					case 1:
 						execl("./Pasazer", "Pasazer", NULL);
@@ -89,7 +91,6 @@ int main()
 	for (int i = 0; i < N + 1; i++)
 	{
 		kill(pidyKierownikowZawiadowcy[i], SIGIO);
-		printf("[%d] Pasazerowie: Wysłałem sygnal do procesu: %d.\n", getpid(), pidyKierownikowZawiadowcy[i]);
 	}
 	
 	return 0;
