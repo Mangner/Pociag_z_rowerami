@@ -24,7 +24,7 @@ int main()
 	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
 	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
 	
-	int semafory_pociagu = create_semafor(".", 'C', 3, IPC_CREAT | 0600);
+	int semafory_pociagu = create_semafor(".", 'C', 4, IPC_CREAT | 0600);
 
 	wait_semafor(semafory_pociagu, 0, 0);							// Czeka czy pasażerowie mogą wejść
 	signal_semafor(semafory_pociagu, 1, 0);							// Pasażer wyraża chęć że chce wejść

@@ -12,3 +12,5 @@ void wait_semafor(int sem_id, int number, int flags);
 int wait_semafor_no_wait(int sem_id, int number);
 void signal_semafor(int sem_id, int number, int flags);
 void free_semafor(int sem_id);
+int how_many_waiting_processes_on_semafor(int sem_id, int number);
+int isSemaphoreLowered(int semid, int semnum);

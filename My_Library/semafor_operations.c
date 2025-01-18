@@ -92,3 +92,42 @@ void free_semafor(int sem_id)
         exit(6);
     }
 }
+
+
+int how_many_waiting_processes_on_semafor(int sem_id, int number)
+{
+	int waiting_process_number = semctl(sem_id, number, GETNCNT);
+
+	if (waiting_process_number == -1)
+	{
+		perror("Semctl GETNCNT failed");
+		exit(7);
+	}
+	else 
+	{
+		return waiting_process_number;
+	}
+}
+
+
+int isSemaphoreLowered(int semid, int semnum) 
+{
+    int val;
+    struct sembuf sb = { semnum, 0, IPC_NOWAIT }; 
+
+    if (semop(semid, &sb, 1) == -1) 
+	{
+        perror("semop");
+        return -1;  
+    }
+
+    val = semctl(semid, semnum, GETVAL);  
+
+    if (val == 0)
+		return 1;
+
+	else 
+		return 0;
+}
+
+

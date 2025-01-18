@@ -11,9 +11,9 @@
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej kierownik pociagu pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
 int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas której pociąg stoi na peronie
-int PasazerowieMogaWchodzic = 1;	// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
+int PasazerowieMogaWchodzic = 0;	// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
 
-
+int CzyRowerzyszciMogaWchodzic = 1;			// Zmienna ktora mowi czy jakis rowerzysta czeka na przyjazd kolejnego pociągu z miejscami rowerowymi
 
 struct message WjazdPociagu = { .mtype = 2 };						// Kierownik czeka na sygnal Zawiadowcy ze moze wjechac
 struct message PociagWjechal = { .mtype = 3 };						// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron
@@ -48,10 +48,11 @@ int main()
 
 	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 
-	int semafory_pociagu = create_semafor(".", 'C', 3, IPC_CREAT | 0600);					// Semafory pociagu
+	int semafory_pociagu = create_semafor(".", 'C', 4, IPC_CREAT | 0600);					// Semafory pociagu
 	initialize_semafor(semafory_pociagu, 0, 1);												// Semafor ktory podnosi się gdy pasażerowie mogą wchodzić
 	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
 	initialize_semafor(semafory_pociagu, 2, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
+	initialize_semafor(semafory_pociagu, 3, 1);												// Semafor specjalny ktory kaze rowerzystom czekac jezeli nie ma miejsc na rowery
 
 	size_t rozmiar_pamieci_pociagu = P + R + 2;
 	int IndexWolnegoMiejsca = P + R;
@@ -75,17 +76,20 @@ int main()
 
 		PociagNieOdjechal = 1;
 		PasazerowieMogaWchodzic = 1;
+		CzyRowerzyszciMogaWchodzic = 1;
 		pamiec_dzielona_pociagu[IndexWolnegoMiejsca] = 0;
 		pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] = 0;
 
-
+		if (isSemaphoreLowered)
+			signal_semafor(semafory_pociagu, 3, 0);
 
 		while (PociagNieOdjechal)
 		{
 			if (wait_semafor_no_wait(semafory_pociagu, 1))
 			{
 				signal_semafor(semafory_pociagu, 2, 0);
-				recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0);
+				while(recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0))
+					continue;
 
 				if (pamiec_dzielona_pociagu[IndexWolnegoMiejsca] >= P)
 					{
@@ -105,6 +109,7 @@ int main()
 					{
 						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
 						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
+						CzyRowerzyszciMogaWchodzic = 0;
 					}
 					else
 					{
@@ -118,11 +123,15 @@ int main()
 					send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);						
 				}
 
-				recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0);
+				while(recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0))
+					continue;;
 				printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
 				if (PasazerowieMogaWchodzic)
 					signal_semafor(semafory_pociagu, 0, 0);
+
+				if (CzyRowerzyszciMogaWchodzic)
+					signal_semafor(semafory_pociagu, 3, 0);
 			}
 		}
 
