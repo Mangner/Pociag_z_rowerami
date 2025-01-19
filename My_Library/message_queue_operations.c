@@ -23,7 +23,7 @@ int create_message_queue(const char *path, int identifier, int flags)
 
 void send_message(int mesg_queue_ID, struct message *msg_ptr, int msg_flag)
 {
-	if (msgsnd(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content), msg_flag) == -1 ) 
+	if (msgsnd(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content) + sizeof(msg_ptr->pid_grupy), msg_flag) == -1 ) 
 	{
         perror("Msgsnd failed");
         exit(7);
@@ -33,7 +33,7 @@ void send_message(int mesg_queue_ID, struct message *msg_ptr, int msg_flag)
 
 int recive_message(int mesg_queue_ID, struct message *msg_ptr,int message_type, int msg_flag)
 {
-	if (msgrcv(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content), message_type, msg_flag) == -1 )
+	if (msgrcv(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content) + sizeof(msg_ptr->pid_grupy), message_type, msg_flag) == -1 )
 	{
 		return 1;
 	}

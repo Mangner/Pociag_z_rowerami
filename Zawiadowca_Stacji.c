@@ -11,8 +11,7 @@
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej zawiadowca pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
 int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas ktorej zawiadowca czeka czas T by nastpenie rozkazać pociągowi odjazd
-int JuzNicNiePrzyjedzie = 0;
-
+int BlokowanieOdblokowaniePeronu = 1;	// Zmienna warunkowo dzięki której zawiadowca na przemian blokuje i odblokowuje peron 
 
 struct message PociagiGotowe = { .mtype = 1 }; 				// Proces Pociagi skonczyl dzialanie
 struct message WjazdPociagu = { .mtype = 2 };				// Zawiadowca wysyla sygnal pociagowi ze moze wjechac
@@ -35,12 +34,17 @@ void signalJedenZawiadowcy_handler(int signal)
 	odjazdPociagu();
 }
 
+
 void signalDwaZawiadowcy_handler(int signal)
 {
-	printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 2 - nikt nie może już wejść.\033[0m\n", getpid());
-	pid_t pid = (pid_t)strtol(PociagWjechal.content, NULL, 10);
-	if (kill(pid, SIGUSR2) == -1) 
-    	perror("Nie udało się wysłać sygnału");
+    if (BlokowanieOdblokowaniePeronu)
+        printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 2 - nikt nie może już wejść.\033[0m\n", getpid());
+    else
+        printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 2 - znowu mogą wchodzić.\033[0m\n", getpid());
+
+    BlokowanieOdblokowaniePeronu = !(BlokowanieOdblokowaniePeronu);
+	printf("TO JA TEN CWEL I WYSYŁAM DO TAKIEGO PIDU %d\n", PociagiGotowe.pid_grupy);
+	kill(-(PociagiGotowe.pid_grupy), SIGUSR2);
 }
 
 void koniecPracy_handler(int signal)
@@ -55,9 +59,8 @@ int main()
 	snprintf(WjazdPociagu.content, sizeof(WjazdPociagu.content), "%d", getpid());
 	snprintf(DoPasazerow.content, sizeof(DoPasazerow.content), "%d", getpid());	
 	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
-	recive_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 1, 0);
+	recive_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 1, 0);	
 
- 
 	printf("\033[1;31m[%d] Zawiadowca Stacji rozpoczal prace.\033[0m\n", getpid());
 
 	signal(SIGUSR1, signalJedenZawiadowcy_handler);
@@ -69,14 +72,7 @@ int main()
 		printf("\033[1;31m[%d] Zawiadowca Stacji: Pociag moze wjechac!\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 0);
 		while (recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0))
-		{
-			if (!PracaTrwa)
-				break;
-			JuzNicNiePrzyjedzie = 1;
-		}
-
-		if (JuzNicNiePrzyjedzie)
-			break;
+			continue;
 
 		PociagNieOdjechal = 1;
 		

@@ -4,12 +4,13 @@
 #include <sys/msg.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include "enviromental_variables.h"
 
 struct message
 {
 	long mtype;
 	char content[20];
+	int pid_grupy;
 };
 
 

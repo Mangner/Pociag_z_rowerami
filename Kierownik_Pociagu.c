@@ -9,11 +9,12 @@
 #include "My_Library/enviromental_variables.h"
 
 
-int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej kierownik pociagu pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
-int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas której pociąg stoi na peronie
-int PasazerowieMogaWchodzic = 0;	// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
+int PracaTrwa = 1;						// Zmienna warunkowa podczas ktorej kierownik pociagu pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
+int PociagNieOdjechal = 0;				// Zmienna warunkowa podczas której pociąg stoi na peronie
+int PasazerowieMogaWchodzic = 1;		// Zmienna warunkowa podczas której pasażerowie mogą wchodzić do pociągu, zmienia się po sygnale 2 zawiadowcy
+int CzyRowerzyszciMogaWchodzic = 1;		// Zmienna ktora mowi czy jakis rowerzysta czeka na przyjazd kolejnego pociągu z miejscami rowerowymi
 
-int CzyRowerzyszciMogaWchodzic = 1;			// Zmienna ktora mowi czy jakis rowerzysta czeka na przyjazd kolejnego pociągu z miejscami rowerowymi
+int semafory_pociagu;
 
 struct message WjazdPociagu = { .mtype = 2 };						// Kierownik czeka na sygnal Zawiadowcy ze moze wjechac
 struct message PociagWjechal = { .mtype = 3 };						// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron
@@ -24,14 +25,27 @@ struct message KoniecPasazera = { .mtype = 7 };						// Komunikat dla Kierowcy P
 struct message DoPasazerow = { .mtype = 8 };						// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
 
 
-void odjazdPociagu_handler(int signal)
+void sygnalZawiadowcyJeden_handler(int signal)
 {
 	if (PociagNieOdjechal)
 	{
-	printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGURS1.\033[0m\n", getpid());
+	printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR1.\033[0m\n", getpid());
 	PociagNieOdjechal = 0;
 	}
 }	
+
+void sygnalZawiadowcyDwa_handler(int signal)
+{
+	printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR2.\033[0m\n", getpid());
+	if (PasazerowieMogaWchodzic)
+		PasazerowieMogaWchodzic = 0;
+	else
+	{
+		PasazerowieMogaWchodzic = 1;
+		if (isSemaphoreLowered(semafory_pociagu, 0))
+			signal_semafor(semafory_pociagu, 0, 0);
+	}
+}
  
 void koniecPracy_handler(int signal)
 {
@@ -40,15 +54,15 @@ void koniecPracy_handler(int signal)
 
 int main()
 {
+	printf("Moj pid grupy %d.\n", getpgrp());
 	printf("\033[1;34m[%d] Kierownik Pociagu: Pociag gotowy do pracy.\033[0m\n", getpid());
-	
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(PociagWjechal.content, sizeof(PociagWjechal.content), "%d", getpid());			// Treśc tego komunikatu to pid tego procesu żeby Zawiadowca mógł mu wysyłać sygnały
 	snprintf(DoPasazerow.content, sizeof(DoPasazerow.content), "%d", getpid());				// Potem pasazerowie jak sie skoncza wysla sygnlal by skonczyli prace 
 
 	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 
-	int semafory_pociagu = create_semafor(".", 'C', 6, IPC_CREAT | 0600);					// Semafory pociagu
+	semafory_pociagu = create_semafor(".", 'C', 6, IPC_CREAT | 0600);					// Semafory pociagu
 	initialize_semafor(semafory_pociagu, 0, 1);												// Semafor ktory podnosi się gdy pasażerowie mogą wchodzić
 	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
 	initialize_semafor(semafory_pociagu, 2, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
@@ -67,7 +81,8 @@ int main()
 
 	pamiec_dzielona_pociagu[IndexNumeruKursu] = 1;
 
-	signal(SIGUSR1, odjazdPociagu_handler);
+	signal(SIGUSR1, sygnalZawiadowcyJeden_handler);
+	signal(SIGUSR2, sygnalZawiadowcyDwa_handler);
 	signal(SIGIO, koniecPracy_handler);
 
 
@@ -75,9 +90,10 @@ int main()
 	{
 		if (recive_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 2, 0))
 		{
-			break;
+			if (!PracaTrwa)
+				break;
+			continue;
 		}
-
 		printf("\033[1;34m[%d] Kierownik Pociagu: Pociag wjechal na peron!\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 0);
 
@@ -135,8 +151,10 @@ int main()
 				printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
 				if (PasazerowieMogaWchodzic)
+				{
 					signal_semafor(semafory_pociagu, 0, 0);
-
+					printf("Podnioslem;d\n");
+				}
 				if (CzyRowerzyszciMogaWchodzic)
 					signal_semafor(semafory_pociagu, 3, 0);
 			}
