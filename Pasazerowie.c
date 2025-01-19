@@ -31,6 +31,18 @@ int losuj_zero_jeden()
 
 int main()
 {
+	FILE *plik = fopen("RaportPasazerow.txt", "w");
+	if (plik == NULL)
+	{
+		perror("Nie można otworzyć pliku");
+		exit(43);
+	}
+	if (fclose(plik) != 0)
+	{
+		perror("Nie można zamknąć pliku");
+		exit(43);
+	}
+
 	srand(time(NULL));
 	if (signal(SIGUSR1, end_generation_handler) == SIG_ERR )
 	{

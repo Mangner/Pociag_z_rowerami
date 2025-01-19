@@ -8,7 +8,7 @@
 
 int create_semafor(const char *path, int identifier, int semafor_amount, int flags);
 void initialize_semafor(int sem_id, int semafor_number, int value);
-void wait_semafor(int sem_id, int number, int flags);
+int wait_semafor(int sem_id, int number, int flags);
 int wait_semafor_no_wait(int sem_id, int number);
 void signal_semafor(int sem_id, int number, int flags);
 void free_semafor(int sem_id);

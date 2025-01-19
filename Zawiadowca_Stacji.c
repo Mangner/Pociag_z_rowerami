@@ -11,6 +11,8 @@
 
 int PracaTrwa = 1;					// Zmienna warunkowa podczas ktorej zawiadowca pracuje, konczy sie gdzy zostana rozwiezieni wszyscy pasazerowie
 int PociagNieOdjechal = 0;			// Zmienna warunkowa podczas ktorej zawiadowca czeka czas T by nastpenie rozkazać pociągowi odjazd
+int JuzNicNiePrzyjedzie = 0;
+
 
 struct message PociagiGotowe = { .mtype = 1 }; 				// Proces Pociagi skonczyl dzialanie
 struct message WjazdPociagu = { .mtype = 2 };				// Zawiadowca wysyla sygnal pociagowi ze moze wjechac
@@ -44,6 +46,7 @@ void signalDwaZawiadowcy_handler(int signal)
 void koniecPracy_handler(int signal)
 {
 	PracaTrwa = 0; 
+	odjazdPociagu();
 }
 
 int main()
@@ -65,7 +68,14 @@ int main()
 	{
 		printf("\033[1;31m[%d] Zawiadowca Stacji: Pociag moze wjechac!\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &WjazdPociagu, 0);
-		if (recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0))
+		while (recive_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 3, 0))
+		{
+			if (!PracaTrwa)
+				break;
+			JuzNicNiePrzyjedzie = 1;
+		}
+
+		if (JuzNicNiePrzyjedzie)
 			break;
 
 		PociagNieOdjechal = 1;
@@ -85,7 +95,8 @@ int main()
 				odjazdPociagu();
 		}
 
-		recive_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 4, 0);
+		while(recive_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 4, 0))
+			continue;
 		printf("\033[1;31m[%d] Zawiadowca Stacji: Dobra odjechał, następny.\033[0m\n", getpid());
 	}
 
