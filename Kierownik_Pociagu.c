@@ -153,12 +153,11 @@ int main()
 		}
 
 		fprintf(plikPasazerow, "Pasazerowie kursu nr: %d\n", (int)pamiec_dzielona_pociagu[IndexNumeruKursu]);
-		int ITERATOR = 0;
-		for (; ITERATOR < pamiec_dzielona_pociagu[IndexWolnegoMiejsca]; ITERATOR++)
+		for (int ITERATOR = 0; ITERATOR < pamiec_dzielona_pociagu[IndexWolnegoMiejsca]; ITERATOR++)
 			fprintf(plikPasazerow, "%d ", (int)pamiec_dzielona_pociagu[ITERATOR]);
 		fprintf(plikPasazerow, "\n");
 		fprintf(plikPasazerow, "Rowery pasażerów kursu nr: %d\n", (int)pamiec_dzielona_pociagu[IndexNumeruKursu]);
-		for (int x = ITERATOR; x < ITERATOR + pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego]; x++)
+		for (int x = P; x < P + pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego]; x++)
 			fprintf(plikPasazerow, "%d ", (int)pamiec_dzielona_pociagu[x]);
 		fprintf(plikPasazerow, "\n");
 
