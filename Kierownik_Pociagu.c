@@ -44,6 +44,9 @@ void sygnalZawiadowcyDwa_handler(int signal)
 		PasazerowieMogaWchodzic = 1;
 		if (isSemaphoreLowered(semafory_pociagu, 0))
 			signal_semafor(semafory_pociagu, 0, 0);
+		
+		else 
+			wait_semafor(semafory_pociagu, 0, 0);
 	}
 }
  
