@@ -4,6 +4,7 @@
 #include <sys/msg.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "enviromental_variables.h"
 
 struct message

@@ -56,7 +56,13 @@ int wait_semafor_no_wait(int sem_id, int number)
 	int operation = semop(sem_id, &semafor_operations, 1);
 
 	if (operation == -1)
-		return 0;
+		if (errno = EAGAIN)
+			return 0;
+		else
+		{
+			perror("Singal Semafor No Wait failed");
+			exit(2147);
+		}
 	else
 		return 1;
 }

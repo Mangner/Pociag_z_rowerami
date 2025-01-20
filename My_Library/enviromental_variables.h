@@ -1,7 +1,7 @@
-#define PassengersGenerationLatency 1	// Czas co ktory jest generowany kolejny proces pasażerski
+#define PassengersGenerationLatency 0	// Czas co ktory jest generowany kolejny proces pasażerski
 #define MaxGeneratedPassengersAmount 10000	// Maksymalna liczba pasażerów do wygenerowania
 
-#define N 10		// Liczba Składów czyli Defacto Pociągów
+#define N 4		// Liczba Składów czyli Defacto Pociągów
 #define P 10	// Liczba Miejsc Pasażerskich w Pociągu
 #define R 5		// Liczba Miejsc dla Rowerów w Pociągu
 

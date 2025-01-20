@@ -43,7 +43,6 @@ void signalDwaZawiadowcy_handler(int signal)
         printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 2 - znowu mogą wchodzić.\033[0m\n", getpid());
 
     BlokowanieOdblokowaniePeronu = !(BlokowanieOdblokowaniePeronu);
-	printf("TO JA TEN CWEL I WYSYŁAM DO TAKIEGO PIDU %d\n", PociagiGotowe.pid_grupy);
 	kill(-(PociagiGotowe.pid_grupy), SIGUSR2);
 }
 
@@ -97,6 +96,4 @@ int main()
 	}
 
 	printf("\033[1;31m[%d] Zawiadowca Stacji: Kończę pracę na dziś.\033[0m\n", getpid());
-
-	delete_meesage_queue(kolejowa_kolejka_komunikatow);
 }

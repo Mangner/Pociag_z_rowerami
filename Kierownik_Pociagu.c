@@ -29,8 +29,8 @@ void sygnalZawiadowcyJeden_handler(int signal)
 {
 	if (PociagNieOdjechal)
 	{
-	printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR1.\033[0m\n", getpid());
-	PociagNieOdjechal = 0;
+		printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR1.\033[0m\n", getpid());
+		PociagNieOdjechal = 0;
 	}
 }	
 
@@ -54,7 +54,6 @@ void koniecPracy_handler(int signal)
 
 int main()
 {
-	printf("Moj pid grupy %d.\n", getpgrp());
 	printf("\033[1;34m[%d] Kierownik Pociagu: Pociag gotowy do pracy.\033[0m\n", getpid());
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(PociagWjechal.content, sizeof(PociagWjechal.content), "%d", getpid());			// Treśc tego komunikatu to pid tego procesu żeby Zawiadowca mógł mu wysyłać sygnały
@@ -113,6 +112,7 @@ int main()
 				signal_semafor(semafory_pociagu, 2, 0);
 				while(recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0))
 					continue;
+				
 
 				if (pamiec_dzielona_pociagu[IndexWolnegoMiejsca] >= P)
 					{
@@ -121,48 +121,56 @@ int main()
 						pid_t pid = (pid_t)strtol(WjazdPociagu.content, NULL, 10);
 						if (kill(pid, SIGUSR1) == -1) 
     						perror("Nie udało się wysłać sygnału");
-
+						
 						while (PociagNieOdjechal)
 							pause();
+
 					}
 
-				if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
+				else
 				{
-					if (pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] >= R)
+					if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
 					{
-						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
-						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
-						CzyRowerzyszciMogaWchodzic = 0;
+						if (pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] >= R)
+						{
+							snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
+							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
+							CzyRowerzyszciMogaWchodzic = 0;
+
+						}
+						else
+						{
+							snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
+							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);	
+						}
 					}
-					else
+					else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
 					{
 						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
-						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);	
+						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);						
 					}
 				}
-				else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
-				{
-					snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
-					send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);						
-				}
-
 				while(recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0))
-					continue;;
+					continue;
+		
 				printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
+
 				if (PasazerowieMogaWchodzic)
-				{
 					signal_semafor(semafory_pociagu, 0, 0);
-					printf("Podnioslem;d\n");
-				}
+					
+
 				if (CzyRowerzyszciMogaWchodzic)
 					signal_semafor(semafory_pociagu, 3, 0);
+
 			}
 		}
 
+	
 		while(wait_semafor(semafory_pociagu, 4, 0))
 			continue;
 		
+
 		FILE *plikPasazerow = fopen("RaportPasazerow.txt", "a");
 		if (plikPasazerow == NULL)
 		{
@@ -179,14 +187,15 @@ int main()
 			fprintf(plikPasazerow, "%d ", (int)pamiec_dzielona_pociagu[x]);
 		fprintf(plikPasazerow, "\n");
 
+
 		if (fclose(plikPasazerow) != 0)
 		{
 			perror("Nie można zamknąc pliku.\n");
 			exit(2138);
 		}
 		
-		signal_semafor(semafory_pociagu, 4, 0);
 
+		signal_semafor(semafory_pociagu, 4, 0);
 
 		printf("\033[1;34m[%d] Kierownik Pociągu: Odjazd!\033[0m\n", getpid());
 		pamiec_dzielona_pociagu[IndexNumeruKursu] = pamiec_dzielona_pociagu[IndexNumeruKursu] + 1;
@@ -205,6 +214,7 @@ int main()
 		free_semafor(semafory_pociagu);
 		detach_shared_memory(pamiec_dzielona_pociagu, shm_ID);
 		free_shared_memory(shm_ID);
+		delete_meesage_queue(kolejowa_kolejka_komunikatow);
 	}
 	return 0;
 }

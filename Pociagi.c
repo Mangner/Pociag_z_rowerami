@@ -46,10 +46,7 @@ int main()
 	}
 
 	PociagiGotowe.pid_grupy = (int)getpgrp();
-	printf("Co zapisałem jako cwel: %d\n", PociagiGotowe.pid_grupy);
-	printf("To ja ten CWEL CO TWORZY POCIAGI: %d.\n", getpgrp());
-
-
 	send_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 0);
+	
 	return 0; 
 }
