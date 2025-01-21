@@ -36,18 +36,7 @@ void sygnalZawiadowcyJeden_handler(int signal)
 
 void sygnalZawiadowcyDwa_handler(int signal)
 {
-	printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR2.\033[0m\n", getpid());
-	if (PasazerowieMogaWchodzic)
-		PasazerowieMogaWchodzic = 0;
-	else
-	{
-		PasazerowieMogaWchodzic = 1;
-		if (isSemaphoreLowered(semafory_pociagu, 0))
-			signal_semafor(semafory_pociagu, 0, 0);
-		
-		else 
-			wait_semafor(semafory_pociagu, 0, 0);
-	}
+	PasazerowieMogaWchodzic = !PasazerowieMogaWchodzic;
 }
  
 void koniecPracy_handler(int signal)
@@ -100,7 +89,6 @@ int main()
 		send_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 0);
 
 		PociagNieOdjechal = 1;
-		PasazerowieMogaWchodzic = 1;
 		CzyRowerzyszciMogaWchodzic = 1;
 		pamiec_dzielona_pociagu[IndexWolnegoMiejsca] = 0;
 		pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] = 0;
@@ -110,62 +98,61 @@ int main()
 
 		while (PociagNieOdjechal)
 		{
-			if (wait_semafor_no_wait(semafory_pociagu, 1))
+			if (PasazerowieMogaWchodzic)
 			{
-				signal_semafor(semafory_pociagu, 2, 0);
-				while(recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0))
-					continue;
-				
-
-				if (pamiec_dzielona_pociagu[IndexWolnegoMiejsca] >= P)
-					{
-						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
-						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
-						pid_t pid = (pid_t)strtol(WjazdPociagu.content, NULL, 10);
-						if (kill(pid, SIGUSR1) == -1) 
-    						perror("Nie udało się wysłać sygnału");
-						
-						while (PociagNieOdjechal)
-							pause();
-
-					}
-
-				else
+				if (wait_semafor_no_wait(semafory_pociagu, 1))
 				{
-					if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
-					{
-						if (pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] >= R)
+					signal_semafor(semafory_pociagu, 2, 0);
+					while(recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0))
+						continue;
+					
+					if (pamiec_dzielona_pociagu[IndexWolnegoMiejsca] >= P)
 						{
 							snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
 							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
-							CzyRowerzyszciMogaWchodzic = 0;
+							pid_t pid = (pid_t)strtol(WjazdPociagu.content, NULL, 10);
+							if (kill(pid, SIGUSR1) == -1) 
+								perror("Nie udało się wysłać sygnału");
+							
+							while (PociagNieOdjechal)
+								pause();
 
 						}
-						else
+
+					else
+					{
+						if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
+						{
+							if (pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] >= R)
+							{
+								snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
+								send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
+								CzyRowerzyszciMogaWchodzic = 0;
+
+							}
+							else
+							{
+								snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
+								send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);	
+							}
+						}
+						else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
 						{
 							snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
-							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);	
+							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);						
 						}
 					}
-					else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
-					{
-						snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
-						send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);						
-					}
-				}
-				while(recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0))
-					continue;
-		
-				printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
+					while(recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0))
+						continue;
+			
+					printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
-
-				if (PasazerowieMogaWchodzic)
 					signal_semafor(semafory_pociagu, 0, 0);
-					
+						
+					if (CzyRowerzyszciMogaWchodzic)
+						signal_semafor(semafory_pociagu, 3, 0);
 
-				if (CzyRowerzyszciMogaWchodzic)
-					signal_semafor(semafory_pociagu, 3, 0);
-
+				}
 			}
 		}
 
