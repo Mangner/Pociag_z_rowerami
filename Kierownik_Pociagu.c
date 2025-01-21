@@ -53,13 +53,12 @@ int main()
 
 	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 
-	semafory_pociagu = create_semafor(".", 'C', 6, IPC_CREAT | 0600);					// Semafory pociagu
-	initialize_semafor(semafory_pociagu, 0, 1);												// Semafor ktory podnosi się gdy pasażerowie mogą wchodzić
-	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
-	initialize_semafor(semafory_pociagu, 2, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
-	initialize_semafor(semafory_pociagu, 3, 1);												// Semafor specjalny ktory kaze rowerzystom czekac jezeli nie ma miejsc na rowery
-	initialize_semafor(semafory_pociagu, 4, 1);												// Semafor służący do synchronizacji zapisu przebiegu kursów , kto wsiadl
-	initialize_semafor(semafory_pociagu, 5, N - 1);											// Semafor służacy do tego by tylko jeden proces zwalniał semafory itp.
+	semafory_pociagu = create_semafor(".", 'C', 5, IPC_CREAT | 0600);					// Semafory pociagu
+	initialize_semafor(semafory_pociagu, 0, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
+	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
+	initialize_semafor(semafory_pociagu, 2, 1);												// Semafor specjalny ktory kaze rowerzystom czekac jezeli nie ma miejsc na rowery
+	initialize_semafor(semafory_pociagu, 3, 1);												// Semafor służący do synchronizacji zapisu przebiegu kursów , kto wsiadl
+	initialize_semafor(semafory_pociagu, 4, N - 1);											// Semafor służacy do tego by tylko jeden proces zwalniał semafory itp.
 
 
 	size_t rozmiar_pamieci_pociagu = P + R + 3;
@@ -94,15 +93,15 @@ int main()
 		pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] = 0;
 
 		if (isSemaphoreLowered)
-			signal_semafor(semafory_pociagu, 3, 0);
+			signal_semafor(semafory_pociagu, 2, 0);
 
 		while (PociagNieOdjechal)
 		{
 			if (PasazerowieMogaWchodzic)
 			{
-				if (wait_semafor_no_wait(semafory_pociagu, 1))
+				if (wait_semafor_no_wait(semafory_pociagu, 0))
 				{
-					signal_semafor(semafory_pociagu, 2, 0);
+					signal_semafor(semafory_pociagu, 1, 0);
 					while(recive_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 5, 0))
 						continue;
 					
@@ -147,17 +146,15 @@ int main()
 			
 					printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
-					signal_semafor(semafory_pociagu, 0, 0);
-						
 					if (CzyRowerzyszciMogaWchodzic)
-						signal_semafor(semafory_pociagu, 3, 0);
+						signal_semafor(semafory_pociagu, 2, 0);
 
 				}
 			}
 		}
 
 	
-		while(wait_semafor(semafory_pociagu, 4, 0))
+		while(wait_semafor(semafory_pociagu, 3, 0))
 			continue;
 		
 
@@ -184,8 +181,7 @@ int main()
 			exit(2138);
 		}
 		
-
-		signal_semafor(semafory_pociagu, 4, 0);
+		signal_semafor(semafory_pociagu, 3, 0);
 
 		printf("\033[1;34m[%d] Kierownik Pociągu: Odjazd!\033[0m\n", getpid());
 		pamiec_dzielona_pociagu[IndexNumeruKursu] = pamiec_dzielona_pociagu[IndexNumeruKursu] + 1;
@@ -199,7 +195,7 @@ int main()
 
 	printf("\033[1;34m[%d] Kierownik Pociagu: Koncze prace.\033[0m\n", getpid());
 
-	if (wait_semafor_no_wait(semafory_pociagu, 5) == 0)
+	if (wait_semafor_no_wait(semafory_pociagu, 4) == 0)
 	{
 		free_semafor(semafory_pociagu);
 		detach_shared_memory(pamiec_dzielona_pociagu, shm_ID);

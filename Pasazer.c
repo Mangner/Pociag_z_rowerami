@@ -24,11 +24,10 @@ int main()
 	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
 	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
 	
-	int semafory_pociagu = create_semafor(".", 'C', 6, IPC_CREAT | 0600);
+	int semafory_pociagu = create_semafor(".", 'C', 5, IPC_CREAT | 0600);
 
-	wait_semafor(semafory_pociagu, 0, 0);							// Czeka czy pasażerowie mogą wejść
-	signal_semafor(semafory_pociagu, 1, 0);							// Pasażer wyraża chęć że chce wejść
-	wait_semafor(semafory_pociagu, 2, 0);							// Pasażer czeka na kontrole 
+	signal_semafor(semafory_pociagu, 0, 0);							// Pasażer wyraża chęć że chce wejść
+	wait_semafor(semafory_pociagu, 1, 0);							// Pasażer czeka na kontrole 
 	
 	send_message(kolejowa_kolejka_komunikatow, &RodzajPasazera, 0);			// Informuje ze jest pasazerem bez roweru
 	recive_message(kolejowa_kolejka_komunikatow, &LosPasazera, 6, 0);		// Dostaje wiadomosc czy wchodzi czy wraca do kolejki
