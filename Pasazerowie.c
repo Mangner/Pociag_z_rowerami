@@ -4,19 +4,12 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/wait.h>
+#include <pthread.h>
 #include "My_Library/message_queue_operations.h"
 #include "My_Library/shared_memory_operations.h"
 #include "My_Library/semafor_operations.h"
 #include "My_Library/enviromental_variables.h"
 
-
-int generate_passengers = 1;
-struct message DoPasazerow = { .mtype = 8 };						// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
-
-void end_generation_handler(int signal)
-{
-	generate_passengers = 0;
-}
 
 int losuj_zero_jeden() 
 {
@@ -28,6 +21,16 @@ int losuj_zero_jeden()
         return 0;
 }
 
+void* collectZombie()
+{
+	int zombieCounter = 0;
+	while (zombieCounter != MaxGeneratedPassengersAmount)
+	{
+		wait(NULL);
+		zombieCounter++;
+	}
+}
+
 
 int main()
 {
@@ -35,75 +38,58 @@ int main()
 	if (plik == NULL)
 	{
 		perror("Nie można otworzyć pliku");
-		exit(43);
+		exit(1);
 	}
 	if (fclose(plik) != 0)
 	{
 		perror("Nie można zamknąć pliku");
-		exit(43);
+		exit(2);
 	}
 
 	srand(time(NULL));
-	if (signal(SIGUSR1, end_generation_handler) == SIG_ERR )
+	pthread_t zombieCollector; 
+	if (pthread_create(&zombieCollector, NULL, collectZombie, NULL) != 0)
 	{
-        perror("Nie można ustawić handlera dla SIGUSR1");
-        exit(1);
-    }
-
-	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
-
-	int pidyKierownikowZawiadowcy[N + 1];
-	for (int i = 0; i < N + 1; i++)
-	{
-		recive_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 8, 0);
-		pid_t pid = (pid_t)strtol(DoPasazerow.content, NULL, 10);
-		pidyKierownikowZawiadowcy[i] = pid;
+		perror("pthread_create error");
+		exit(3);
 	}
-
+	
 
 	int iterator = 0;
 	int los;
-	while (generate_passengers && iterator < MaxGeneratedPassengersAmount)
+	while (iterator < MaxGeneratedPassengersAmount)
 	{
 		los = losuj_zero_jeden();
 		switch (fork())
 		{
 			case -1:
 				perror("Fork Problem");
-				exit(2);
-			
+				system("killall -9 Pasazer Pasazer_z_Rowerem");
+				exit(4);
+							
 			case 0:
-				sleep(1);
 				switch (los)
 				{
 					case 1:
 						execl("./Pasazer", "Pasazer", NULL);
 						perror("Pasazer process error");
-						exit(3);
+						exit(5);
 					
 					case 0:
 						execl("./Pasazer_z_rowerem", "Pasazer_z_rowerem", NULL);
 						perror("Pasazer_z_rowerem process error");
-						exit(4);
+						exit(6);
 				}
 		}
 		iterator++;
 		usleep(PassengersGenerationLatency);
 	}
 
-	while (iterator != 0)
+	if (pthread_join(zombieCollector, NULL) != 0)
 	{
-		wait(NULL);
-		iterator--;
+		perror("pthread join error");
+		exit(7);
 	}
 
-
-	printf("Wszyscy Pasażerowie już wsiedli.\n");
-
-	for (int i = 0; i < N + 1; i++)
-	{
-		kill(pidyKierownikowZawiadowcy[i], SIGIO);
-	}
-	
 	return 0;
 }

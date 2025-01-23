@@ -26,6 +26,7 @@ void send_message(int mesg_queue_ID, struct message *msg_ptr, int msg_flag)
 	if (msgsnd(mesg_queue_ID, (void*)msg_ptr, sizeof(msg_ptr->content) + sizeof(msg_ptr->pid_grupy), msg_flag) == -1 ) 
 	{
         perror("Msgsnd failed");
+		printf("%d\n", getpid());
         exit(7);
 	}
 }
@@ -40,6 +41,7 @@ int recive_message(int mesg_queue_ID, struct message *msg_ptr,int message_type, 
 		else 
 		{
 			perror("Msg Recive failed");
+			printf("%d\n", getpid());
 			exit(2435464);
 		}
 	}

@@ -20,7 +20,7 @@ int main()
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(RodzajPasazera.content, sizeof(RodzajPasazera.content), "%s", "Z rowerem");		// Zapisuje że pasażer nie ma roweru
 
-	size_t rozmiar_pamieci_pociagu = P + R + 3;
+	size_t rozmiar_pamieci_pociagu = P + R + 4;
 	int IndexWolnegoMiejsca = P + R;
 	int IndexWolnegoMiejscaRowerowego = P + R + 1;
 	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
@@ -45,11 +45,11 @@ int main()
 		pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] = pamiec_dzielona_pociagu[IndexWolnegoMiejscaRowerowego] + 1;
 		printf("\033[1;32m[%d] Pasazer z Rowerem: Usiadłem i mój rower też.\033[0m\n", getpid());
 		send_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 0);
-		signal_semafor(semafory_pociagu, 2, 0);
 	}
 	else
 	{
 		printf("\033[1;32m[%d] Pasazer z Rowerem: Nie ma miejsca dla mnie i mojego rowerku :( , wracam do kolejki.\033[0m\n", getpid());
+		printf("F\n");
 		send_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 0);
 		execl("./Pasazer_z_rowerem", "Pasazer_z_rowerem", NULL);
 	}

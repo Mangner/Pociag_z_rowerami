@@ -14,15 +14,15 @@ struct message PociagiGotowe = { .mtype = 1 };				// Proces Pociagi skonczyl dzi
 
 int main()
 {
+	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
+	
+	int pid_pociagu;
 	pid_t parent_pid = getpid();
 	if (setpgid(parent_pid, parent_pid) == -1) 
 	{
     	perror("setpgid (parent) failed");
     	exit(1);
 	}
-
-	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
-	int pid_pociagu;
 
 	for (int i = 0; i < N; i++)
 	{

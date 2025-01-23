@@ -17,7 +17,6 @@ struct message PociagiGotowe = { .mtype = 1 }; 				// Proces Pociagi skonczyl dz
 struct message WjazdPociagu = { .mtype = 2 };				// Zawiadowca wysyla sygnal pociagowi ze moze wjechac
 struct message PociagWjechal = { .mtype = 3 };				// Komunikat dla Zawiadowcy Stacji że pociąg wjechał na peron
 struct message PociagOdjechal = { .mtype = 4 };				// Komunikat dla Zawiadowcy Stacji że pociąg opuścił peron
-struct message DoPasazerow = { .mtype = 8 };				// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
 
 
 void odjazdPociagu()
@@ -35,7 +34,7 @@ void signalJedenZawiadowcy_handler(int signal)
 }
 
 
-void signalDwaZawiadowcy_handler(int signal)
+void signalDwaZawiadowcy_handler()
 {
     if (BlokowanieOdblokowaniePeronu)
         printf("\033[1;31m[%d] Zawiadowca Stacji: Sygnał 2 - nikt nie może już wejść.\033[0m\n", getpid());
@@ -46,25 +45,34 @@ void signalDwaZawiadowcy_handler(int signal)
 	kill(-(PociagiGotowe.pid_grupy), SIGUSR2);
 }
 
-void koniecPracy_handler(int signal)
+void koniecPracy()
 {
+	printf("\033[1;31m[%d] Zawiadowca Stacji: Kończymy pracę.\033[0m\n", getpid());
 	PracaTrwa = 0; 
-	odjazdPociagu();
+	kill(-(PociagiGotowe.pid_grupy), SIGIO);
+	if (PociagNieOdjechal)
+		odjazdPociagu();
 }
 
 int main()
 {
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(WjazdPociagu.content, sizeof(WjazdPociagu.content), "%d", getpid());
-	snprintf(DoPasazerow.content, sizeof(DoPasazerow.content), "%d", getpid());	
-	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 	recive_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 1, 0);	
 
 	printf("\033[1;31m[%d] Zawiadowca Stacji rozpoczal prace.\033[0m\n", getpid());
 
+	size_t rozmiar_pamieci_pociagu = P + R + 4;
+	int IndexNumeruKursu = P + R + 2;
+	int passengerCounter = P + R + 3;
+	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
+	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
+
+	pamiec_dzielona_pociagu[IndexNumeruKursu] = 1;
+	pamiec_dzielona_pociagu[passengerCounter] = 0;
+
 	signal(SIGUSR1, signalJedenZawiadowcy_handler);
 	signal(SIGUSR2, signalDwaZawiadowcy_handler);
-	signal(SIGIO, koniecPracy_handler);
 
 	while (PracaTrwa)
 	{
@@ -92,7 +100,12 @@ int main()
 
 		while(recive_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 4, 0))
 			continue;
-		printf("\033[1;31m[%d] Zawiadowca Stacji: Dobra odjechał, następny.\033[0m\n", getpid());
+
+		
+		if (pamiec_dzielona_pociagu[passengerCounter] == MaxGeneratedPassengersAmount)
+			koniecPracy();
+		else
+			printf("\033[1;31m[%d] Zawiadowca Stacji: Dobra odjechał, następny.\033[0m\n", getpid());
 	}
 
 	printf("\033[1;31m[%d] Zawiadowca Stacji: Kończę pracę na dziś.\033[0m\n", getpid());

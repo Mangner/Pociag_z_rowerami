@@ -53,7 +53,7 @@ int main()
 
 	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 
-	semafory_pociagu = create_semafor(".", 'C', 5, IPC_CREAT | 0600);					// Semafory pociagu
+	semafory_pociagu = create_semafor(".", 'C', 5, IPC_CREAT | 0600);						// Semafory pociagu
 	initialize_semafor(semafory_pociagu, 0, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
 	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
 	initialize_semafor(semafory_pociagu, 2, 1);												// Semafor specjalny ktory kaze rowerzystom czekac jezeli nie ma miejsc na rowery
@@ -61,15 +61,15 @@ int main()
 	initialize_semafor(semafory_pociagu, 4, N - 1);											// Semafor służacy do tego by tylko jeden proces zwalniał semafory itp.
 
 
-	size_t rozmiar_pamieci_pociagu = P + R + 3;
+	size_t rozmiar_pamieci_pociagu = P + R + 4;
 	int IndexWolnegoMiejsca = P + R;
 	int IndexWolnegoMiejscaRowerowego = P + R + 1;
 	int IndexNumeruKursu = P + R + 2;
+	int passengerCounter = P + R + 3;
 	
 	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
 	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
 
-	pamiec_dzielona_pociagu[IndexNumeruKursu] = 1;
 
 	signal(SIGUSR1, sygnalZawiadowcyJeden_handler);
 	signal(SIGUSR2, sygnalZawiadowcyDwa_handler);
@@ -115,9 +115,7 @@ int main()
 							
 							while (PociagNieOdjechal)
 								pause();
-
 						}
-
 					else
 					{
 						if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
@@ -127,28 +125,31 @@ int main()
 								snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
 								send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
 								CzyRowerzyszciMogaWchodzic = 0;
-
 							}
 							else
 							{
 								snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
 								send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);	
+								pamiec_dzielona_pociagu[passengerCounter] = pamiec_dzielona_pociagu[passengerCounter] + 1;
 							}
 						}
 						else if (strcmp(RodzajPasazera.content, "Bez Rowera") == 0)
 						{
 							snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wchodz do Pociagu");
-							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);						
+							send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);	
+							pamiec_dzielona_pociagu[passengerCounter] = pamiec_dzielona_pociagu[passengerCounter] + 1;					
 						}
 					}
 					while(recive_message(kolejowa_kolejka_komunikatow, &KoniecPasazera, 7, 0))
 						continue;
-			
-					printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
+					printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
+					printf("%d\n", pamiec_dzielona_pociagu[passengerCounter]);
+
+				
 					if (CzyRowerzyszciMogaWchodzic)
 						signal_semafor(semafory_pociagu, 2, 0);
-
+					
 				}
 			}
 		}
