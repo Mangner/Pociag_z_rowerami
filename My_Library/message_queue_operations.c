@@ -40,6 +40,7 @@ int recive_message(int mesg_queue_ID, struct message *msg_ptr,int message_type, 
 		else 
 		{
 			perror("Msg Recive failed");
+			printf("%d\n", getpid());
 			exit(2435464);
 		}
 	}

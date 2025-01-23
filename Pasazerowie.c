@@ -8,15 +8,9 @@
 #include "My_Library/shared_memory_operations.h"
 #include "My_Library/semafor_operations.h"
 #include "My_Library/enviromental_variables.h"
+#include <pthread.h>
 
-
-int generate_passengers = 1;
 struct message DoPasazerow = { .mtype = 8 };						// Komunikat dla Procesu Pasazerow ktory przekazuje PID by potem otrzymać sygnal o koncu pracy 
-
-void end_generation_handler(int signal)
-{
-	generate_passengers = 0;
-}
 
 int losuj_zero_jeden() 
 {
@@ -28,6 +22,16 @@ int losuj_zero_jeden()
         return 0;
 }
 
+void* collectZombie()
+{
+	int zombieCounter = 0;
+	while (zombieCounter != MaxGeneratedPassengersAmount)
+	{
+		while (wait(NULL) == -1);
+		zombieCounter++;
+		printf("Zebrałem zombie %d.\n", zombieCounter);
+	}
+}
 
 int main()
 {
@@ -44,14 +48,15 @@ int main()
 	}
 
 	srand(time(NULL));
-	if (signal(SIGUSR1, end_generation_handler) == SIG_ERR )
+	pthread_t zombieCollector; 
+	if (pthread_create(&zombieCollector, NULL, collectZombie, NULL) != 0)
 	{
-        perror("Nie można ustawić handlera dla SIGUSR1");
-        exit(1);
-    }
+		perror("pthread_create error");
+		exit(3);
+	}
+
 
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
-
 	int pidyKierownikowZawiadowcy[N + 1];
 	for (int i = 0; i < N + 1; i++)
 	{
@@ -63,14 +68,16 @@ int main()
 
 	int iterator = 0;
 	int los;
-	while (generate_passengers && iterator < MaxGeneratedPassengersAmount)
+	while (iterator < MaxGeneratedPassengersAmount)
 	{
 		los = losuj_zero_jeden();
 		switch (fork())
 		{
 			case -1:
 				perror("Fork Problem");
+				system("killall -9 Pasazer Pasazer_z_Rowerem");
 				exit(2);
+
 			
 			case 0:
 				sleep(1);
@@ -91,12 +98,11 @@ int main()
 		usleep(PassengersGenerationLatency);
 	}
 
-	while (iterator != 0)
+	if (pthread_join(zombieCollector, NULL) != 0)
 	{
-		wait(NULL);
-		iterator--;
+		perror("pthread join error");
+		exit(7);
 	}
-
 
 	printf("Wszyscy Pasażerowie już wsiedli.\n");
 
