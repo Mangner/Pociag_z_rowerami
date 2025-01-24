@@ -57,6 +57,19 @@ int main()
 	int kolejowa_kolejka_komunikatow = create_message_queue(".", 'H', IPC_CREAT | 0600);
 	snprintf(WjazdPociagu.content, sizeof(WjazdPociagu.content), "%d", getpid());
 	snprintf(DoPasazerow.content, sizeof(DoPasazerow.content), "%d", getpid());	
+
+	int semafory_pociagu = create_semafor(".", 'C', 6, IPC_CREAT | 0600);
+	initialize_semafor(semafory_pociagu, 0, 1);												// Semafor ktory podnosi się gdy pasażerowie mogą wchodzić
+	initialize_semafor(semafory_pociagu, 1, 0);												// Semafor który podnosci się gdy jakiś pasażer chce wejść
+	initialize_semafor(semafory_pociagu, 2, 0);												// Semafor odpowiadający za kontrole pasażera czyli sprawdzanie miejsca dla niego
+	initialize_semafor(semafory_pociagu, 3, 1);												// Semafor specjalny ktory kaze rowerzystom czekac jezeli nie ma miejsc na rowery
+	initialize_semafor(semafory_pociagu, 4, 1);												// Semafor służący do synchronizacji zapisu przebiegu kursów , kto wsiadl
+	initialize_semafor(semafory_pociagu, 5, 0);											   	// Semafor służacy do tego by zawiadowca zwolnił IPC po zakonczeniu pracy pociagow
+
+	size_t rozmiar_pamieci_pociagu = P + R + 3;
+	int shm_ID = create_shared_memory(".", 'B', sizeof(int) * rozmiar_pamieci_pociagu, IPC_CREAT | 0600);
+	int* pamiec_dzielona_pociagu = (int*)attach_shared_memory(shm_ID, NULL, 0);
+
 	send_message(kolejowa_kolejka_komunikatow, &DoPasazerow, 0);
 	recive_message(kolejowa_kolejka_komunikatow, &PociagiGotowe, 1, 0);	
 
@@ -96,4 +109,13 @@ int main()
 	}
 
 	printf("\033[1;31m[%d] Zawiadowca Stacji: Kończę pracę na dziś.\033[0m\n", getpid());
+
+	for (int i = 0; i < N; i++)
+		while (wait_semafor(semafory_pociagu, 5, 0))
+			continue;
+
+	free_semafor(semafory_pociagu);
+	detach_shared_memory(pamiec_dzielona_pociagu, shm_ID);
+	free_shared_memory(shm_ID);
+	delete_meesage_queue(kolejowa_kolejka_komunikatow);
 }

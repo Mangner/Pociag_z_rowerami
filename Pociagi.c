@@ -31,6 +31,7 @@ int main()
 		{
 			case -1:
 				perror("Fork failed");
+				system("killall -9 Kierownik_Pociagu");
 				exit(2);
 			
 			case 0:
