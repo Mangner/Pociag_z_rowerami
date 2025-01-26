@@ -29,7 +29,6 @@ void* collectZombie()
 	{
 		while (wait(NULL) == -1);
 		zombieCounter++;
-		printf("Zebrałem zombie %d.\n", zombieCounter);
 	}
 }
 

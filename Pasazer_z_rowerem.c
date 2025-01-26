@@ -28,8 +28,8 @@ int main()
 	
 	int semafory_pociagu = create_semafor(".", 'C', 6, IPC_CREAT | 0600);
 
-	wait_semafor(semafory_pociagu, 3, 0);							// Czeka czy rowerzyści mogą wejść
 	wait_semafor(semafory_pociagu, 0, 0);							// Czeka czy pasażerowie mogą wejść
+	wait_semafor(semafory_pociagu, 3, 0);							// Czeka czy rowerzyści mogą wejść
 	signal_semafor(semafory_pociagu, 1, 0);							// Pasażer wyraża chęć że chce wejść
 	wait_semafor(semafory_pociagu, 2, 0);							// Pasażer czeka na kontrole 
 	

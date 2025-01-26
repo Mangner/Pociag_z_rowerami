@@ -25,6 +25,7 @@ void odjazdPociagu()
 	pid_t pid = (pid_t)strtol(PociagWjechal.content, NULL, 10);
 	if (kill(pid, SIGUSR1) == -1) 
     	perror("Nie udało się wysłać sygnału");
+	
 	PociagNieOdjechal = 0;
 }
 
@@ -66,6 +67,7 @@ int main()
 	signal(SIGUSR2, signalDwaZawiadowcy_handler);
 	signal(SIGIO, koniecPracy_handler);
 
+
 	while (PracaTrwa)
 	{
 		printf("\033[1;31m[%d] Zawiadowca Stacji: Pociag moze wjechac!\033[0m\n", getpid());
@@ -89,7 +91,7 @@ int main()
 			if (PociagNieOdjechal)
 				odjazdPociagu();
 		}
-
+	
 		while(recive_message(kolejowa_kolejka_komunikatow, &PociagOdjechal, 4, 0))
 			continue;
 		printf("\033[1;31m[%d] Zawiadowca Stacji: Dobra odjechał, następny.\033[0m\n", getpid());

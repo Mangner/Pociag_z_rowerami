@@ -26,12 +26,9 @@ struct message DoPasazerow = { .mtype = 8 };						// Komunikat dla Procesu Pasaz
 
 
 void sygnalZawiadowcyJeden_handler(int signal)
-{
-	if (PociagNieOdjechal)
-	{
-		printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR1.\033[0m\n", getpid());
-		PociagNieOdjechal = 0;
-	}
+{	
+	printf("\033[1;34m[%d] Kierownik Pociagu: Otrzymalem Sygnal SIGUSR1.\033[0m\n", getpid());
+	PociagNieOdjechal = 0;
 }	
 
 void sygnalZawiadowcyDwa_handler(int signal)
@@ -86,8 +83,6 @@ int main()
 			continue;
 		}
 		printf("\033[1;34m[%d] Kierownik Pociagu: Pociag wjechal na peron!\033[0m\n", getpid());
-		send_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 0);
-
 		PociagNieOdjechal = 1;
 		CzyRowerzyszciMogaWchodzic = 1;
 		pamiec_dzielona_pociagu[IndexWolnegoMiejsca] = 0;
@@ -95,6 +90,8 @@ int main()
 
 		if (isSemaphoreLowered)
 			signal_semafor(semafory_pociagu, 3, 0);
+			
+		send_message(kolejowa_kolejka_komunikatow, &PociagWjechal, 0);
 
 		while (PociagNieOdjechal)
 		{
@@ -118,7 +115,6 @@ int main()
 								pause();
 
 						}
-
 					else
 					{
 						if (strcmp(RodzajPasazera.content,"Z rowerem") == 0)
@@ -128,7 +124,6 @@ int main()
 								snprintf(LosPasazera.content, sizeof(LosPasazera.content), "%s", "Wracaj do Kolejki");
 								send_message(kolejowa_kolejka_komunikatow, &LosPasazera, 0);
 								CzyRowerzyszciMogaWchodzic = 0;
-
 							}
 							else
 							{
@@ -147,11 +142,9 @@ int main()
 			
 					printf("\033[1;34m[%d] Kierownik Pociągu: Proszę kolejny wsiadać!\033[0m\n", getpid());
 
-					signal_semafor(semafory_pociagu, 0, 0);
-						
-					if (CzyRowerzyszciMogaWchodzic)
+					signal_semafor(semafory_pociagu, 0, 0);						
+					if (CzyRowerzyszciMogaWchodzic && isSemaphoreLowered(semafory_pociagu, 3))
 						signal_semafor(semafory_pociagu, 3, 0);
-
 				}
 			}
 		}

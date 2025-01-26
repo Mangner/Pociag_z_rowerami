@@ -116,22 +116,12 @@ int how_many_waiting_processes_on_semafor(int sem_id, int number)
 
 int isSemaphoreLowered(int semid, int semnum) 
 {
-    int val;
-    struct sembuf sb = { semnum, 0, IPC_NOWAIT }; 
-
-    if (semop(semid, &sb, 1) == -1) 
-	{
-        perror("semop");
-        return -1;  
+    int val = semctl(semid, semnum, GETVAL);
+    if (val == -1) 
+    {
+        perror("semctl");
+        return -1; 
     }
-
-    val = semctl(semid, semnum, GETVAL);  
-
-    if (val == 0)
-		return 1;
-
-	else 
-		return 0;
+    return (val == 0) ? 1 : 0;  
 }
-
 
